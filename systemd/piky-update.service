@@ -1,0 +1,11 @@
+[Unit]
+Description=updater
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/update my_server.com my_key.pem
+
+[Install]
+WantedBy=multi-user.target
+

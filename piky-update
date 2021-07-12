@@ -1,53 +1,14 @@
 #!/bin/bash
 
-UPDATE_URL=$1
-RSAKEY=$2
-
-mkdir -p /tmp/update
-rm -rf /tmp/update
-mkdir -p /tmp/update
-cd /tmp/update
-
-curl -s --connect-timeout 10 $UPDATE_URL/image/latest/version > version
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to check for update."
+if [[ $# -ne 2 ]] ; then
+    echo "Usage: $0 https://myserver.com /path/to/key"
     exit 1
 fi
 
-cmp -s /etc/version version
-if [[ $? -eq 0 ]] ; then
-    echo "Up to date."
-    exit 0
-fi
+URL=$1
+KEY=$2
 
-curl --connect-timeout 10 $UPDATE_URL/image/latest > latest
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to download update."
-    exit 1
-fi
-
-tar xvf latest
-if [[ ! -e "key.bin.enc" ]] || [[ ! -e "update.tar.gz.enc" ]] ; then
-    echo "Failed to extract update."
-    exit 1
-fi
-
-openssl rsautl -decrypt -inkey $RSAKEY -in key.bin.enc -out key.bin
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to decrypt key."
-    exit 1
-fi
-
-openssl enc -d -aes-256-cbc -md sha256 -in update.tar.gz.enc -out update.tar.gz -pass file:./key.bin
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to decrypt update."
-    exit 1
-fi
-
-./run.sh
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to execute update."
-    exit 1
-fi
-
-echo "Update successful."
+/usr/bin/piky-update-get $URL /tmp/blob \
+    && /usr/bin/piky-update-extract $KEY /tmp/blob \
+    && chmod +x /tmp/payload/run.sh \
+    && /tmp/payload/run.sh

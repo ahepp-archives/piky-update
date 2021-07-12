@@ -1,0 +1,16 @@
+#!/bin/bash -x
+
+RSAKEY=$1
+INDIR=$2
+OUTFILE=$3
+
+if [[ $# -ne 3 ]] ; then
+    echo "Usage: $0 path/to/key path/to/indir path/to/outfile"
+    exit 1
+fi
+
+tar czf $INDIR/update.tar.gz -C $INDIR payload
+openssl rand -base64 32 > $INDIR/key.bin
+openssl enc -aes-256-cbc -md sha256 -in $INDIR/update.tar.gz -out $INDIR/update.tar.gz.enc -pass file:$INDIR/key.bin
+openssl rsautl -encrypt -inkey $RSAKEY -pubin -in $INDIR/key.bin -out $INDIR/key.bin.enc
+tar czf $OUTFILE -C $INDIR update.tar.gz.enc key.bin.enc

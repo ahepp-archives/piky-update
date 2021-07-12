@@ -1,0 +1,36 @@
+#!/bin/bash -x
+
+RSAKEY=$1
+BLOB=$2
+DST=$(dirname $BLOB)
+
+if [[ $# -ne 2 ]] ; then
+    echo "Usage: $0 path/to/key path/to/blob"
+    exit 1
+fi
+
+tar xzf $BLOB -C $DST
+if [[ ! -e "$DST/key.bin.enc" ]] || [[ ! -e "$DST/update.tar.gz.enc" ]] ; then
+    echo "Failed to extract update."
+    exit 1
+fi
+
+openssl rsautl -decrypt -inkey $RSAKEY -in $DST/key.bin.enc -out $DST/key.bin
+if [[ $? -ne 0 ]] ; then
+    echo "Failed to decrypt key."
+    exit 1
+fi
+
+openssl enc -d -aes-256-cbc -md sha256 -in $DST/update.tar.gz.enc -out $DST/update.tar.gz -pass file:$DST/key.bin
+if [[ $? -ne 0 ]] ; then
+    echo "Failed to decrypt update."
+    exit 1
+fi
+
+tar xvf $DST/update.tar.gz -C $DST
+if [[ ! -e "run.sh" ]]; then
+    echo "Failed to extract update payload."
+    exit 1
+fi
+
+echo "Update successfully extracted."

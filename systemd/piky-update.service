@@ -1,10 +1,10 @@
 [Unit]
-Description=updater
+Description=piky updater
 Requires=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/usr/bin/update my_server.com my_key.pem
+ExecStart=/usr/bin/piky-update https://myserver.com /usr/share/piky/piky-private.pem
 
 [Install]
 WantedBy=multi-user.target

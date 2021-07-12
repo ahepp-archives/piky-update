@@ -1,0 +1,30 @@
+#!/bin/bash
+
+URL=$1
+DST=$2
+
+if [[ $# -ne 2 ]] ; then
+    echo "Usage: $0 url path/to/file" 
+    exit 1
+fi
+
+VERSIONFILE=$(dirname $DST)/version
+curl -s --connect-timeout 10 $URL/version > $VERSIONFILE
+if [[ $? -ne 0 ]] ; then
+    echo "Failed to check for update."
+    exit 1
+fi
+
+cmp /etc/version $VERSIONFILE
+if [[ $? -eq 0 ]] ; then
+    echo "Up to date."
+    exit 0
+fi
+
+curl -s --connect-timeout 10 $URL/blob > $DST
+if [[ $? -ne 0 ]] ; then
+    echo "Failed to download update."
+    exit 1
+fi
+
+echo "Update successfully downloaded."
